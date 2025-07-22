@@ -161,21 +161,6 @@ class TopBar(QWidget):
         except Exception as e:
             print(f"Falha ao reservar espaço no Windows: {e}")
 
-    def _reserve_space_linux(self):
-        try:
-            self.setProperty("_NET_WM_WINDOW_TYPE", "_NET_WM_WINDOW_TYPE_DOCK")
-            self.setProperty("_NET_WM_STATE", "_NET_WM_STATE_ABOVE")
-            
-            screen_width = self.width()
-            strut = [0, 0, self.height(), 0]
-            strut_partial = [0, 0, self.height(), 0, 0, 0, 0, screen_width-1, 0, 0, 0, 0]
-            
-            self.setProperty("_NET_WM_STRUT", strut)
-            self.setProperty("_NET_WM_STRUT_PARTIAL", strut_partial)
-            
-        except Exception as e:
-            print(f"Falha ao reservar espaço no Linux: {e}")
-
     def update_ram_usage(self, percentage):
         color = self._get_usage_color(percentage)
         self.ram_label.setText(f"RAM {percentage:.0f}%")

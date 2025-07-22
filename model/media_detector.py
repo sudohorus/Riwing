@@ -20,10 +20,6 @@ class MediaDetector:
         result = None
         if self.system == "Windows":
             result = self._get_windows_media()
-        elif self.system == "Linux":
-            result = self._get_linux_media()
-        elif self.system == "Darwin": 
-            result = self._get_macos_media()
             
         self._cache['data'] = result
         self._cache['timestamp'] = current_time
@@ -110,96 +106,6 @@ class MediaDetector:
                                     
         except Exception as e:
             print(f"Erro no método alternativo: {e}")
-            
-        return None
-    
-    def _get_linux_media(self) -> Optional[Dict[str, str]]:
-        try:
-            try:
-                players_result = subprocess.run(['playerctl', '--list-all'], 
-                                              capture_output=True, text=True, timeout=2)
-                
-                spotify_player = None
-                if players_result.returncode == 0:
-                    for player in players_result.stdout.strip().split('\n'):
-                        if 'spotify' in player.lower():
-                            spotify_player = player
-                            break
-                
-                if spotify_player:
-                    artist_result = subprocess.run(['playerctl', '-p', spotify_player, 'metadata', 'artist'], 
-                                                 capture_output=True, text=True, timeout=1)
-                    title_result = subprocess.run(['playerctl', '-p', spotify_player, 'metadata', 'title'], 
-                                                capture_output=True, text=True, timeout=1)
-                    
-                    if (artist_result.returncode == 0 and title_result.returncode == 0 and
-                        artist_result.stdout.strip() and title_result.stdout.strip()):
-                        return {
-                            'artist': artist_result.stdout.strip(),
-                            'title': title_result.stdout.strip(),
-                            'app': 'Spotify'
-                        }
-                        
-            except FileNotFoundError:
-                pass  
-            
-            try:
-                result = subprocess.run(['wmctrl', '-l'], capture_output=True, text=True, timeout=2)
-                if result.returncode == 0:
-                    for line in result.stdout.split('\n'):
-                        if 'spotify' in line.lower() and ' - ' in line:
-                            title_part = line.split(None, 4)[-1] if len(line.split(None, 4)) >= 5 else ""
-                            if title_part and title_part not in ['Spotify', 'Spotify Free', 'Spotify Premium']:
-                                match = re.match(r'^(.+?)\s*[-–—]\s*(.+?)$', title_part)
-                                if match:
-                                    return {
-                                        'artist': match.group(1).strip(),
-                                        'title': match.group(2).strip(),
-                                        'app': 'Spotify'
-                                    }
-                                        
-            except FileNotFoundError:
-                pass  
-                
-        except Exception:
-            pass
-            
-        return None
-    
-    def _get_macos_media(self) -> Optional[Dict[str, str]]:
-        try:
-            ps_script = '''
-            tell application "System Events"
-                if exists (processes whose name is "Spotify") then
-                    tell application "Spotify"
-                        try
-                            set trackName to name of current track
-                            set artistName to artist of current track
-                            set playerState to player state as string
-                            return artistName & "|" & trackName & "|Spotify (" & playerState & ")"
-                        on error
-                            return ""
-                        end try
-                    end tell
-                end if
-            end tell
-            return ""
-            '''
-            
-            result = subprocess.run(['osascript', '-e', ps_script], 
-                                  capture_output=True, text=True, timeout=4)
-            
-            if result.returncode == 0 and result.stdout.strip():
-                parts = result.stdout.strip().split('|')
-                if len(parts) >= 3:
-                    return {
-                        'artist': parts[0].strip(),
-                        'title': parts[1].strip(),
-                        'app': parts[2].strip()
-                    }
-                    
-        except Exception as e:
-            print(f"Erro na detecção macOS: {e}")
             
         return None
     
