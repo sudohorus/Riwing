@@ -1,6 +1,8 @@
-from PyQt6.QtCore import QTimer, QObject
+from PyQt6.QtCore import QTimer, QObject, QThread
 from model.system_info import SystemInfo
 from model.media_detector import MediaDetector
+from worker.worker_system_info import SystemInfoWorker
+from worker.worker_media_info import MediaInfoWorker
 
 class MainController(QObject):
     def __init__(self, topbar):
@@ -8,78 +10,74 @@ class MainController(QObject):
         self.topbar = topbar
         self.system_info = SystemInfo()
         self.media_detector = MediaDetector()
-        
-        # Configuração dos timers
+
+        self.setup_system_thread()
+        self.setup_media_thread()
         self.setup_timers()
-        
-        # Atualização inicial
         self.update_all()
 
     def setup_timers(self):
-        """Configura os timers para atualizações periódicas"""
-        
-        # Timer para data/hora (atualiza a cada segundo)
         self.time_timer = QTimer()
         self.time_timer.timeout.connect(self.update_time_info)
         self.time_timer.start(1000)
-        
-        # Timer para CPU/RAM (atualiza a cada 2 segundos)
+
         self.system_timer = QTimer()
-        self.system_timer.timeout.connect(self.update_system_info)
+        self.system_timer.timeout.connect(self.start_system_worker)
         self.system_timer.start(2000)
-        
-        # Timer para mídia (atualiza a cada 3 segundos para não sobrecarregar)
+
         self.media_timer = QTimer()
-        self.media_timer.timeout.connect(self.update_media_info)
+        self.media_timer.timeout.connect(self.start_media_worker)
         self.media_timer.start(3000)
 
-    def update_all(self):
-        """Atualiza todas as informações imediatamente"""
-        self.update_time_info()
-        self.update_system_info()
-        self.update_media_info()
+    def setup_system_thread(self):
+        self.system_thread = QThread()
+        self.system_worker = SystemInfoWorker(self.system_info)
+        self.system_worker.moveToThread(self.system_thread)
+
+        self.system_thread.started.connect(self.system_worker.run)
+        self.system_worker.result.connect(self.on_system_info_updated)
+        self.system_worker.result.connect(self.system_thread.quit)
+
+    def start_system_worker(self):
+        if not self.system_thread.isRunning():
+            self.system_thread.start()
+
+    def on_system_info_updated(self, ram_usage, cpu_usage):
+        self.topbar.update_ram_usage(ram_usage)
+        self.topbar.update_cpu_usage(cpu_usage)
+
+    def setup_media_thread(self):
+        self.media_thread = QThread()
+        self.media_worker = MediaInfoWorker(self.media_detector)
+        self.media_worker.moveToThread(self.media_thread)
+
+        self.media_thread.started.connect(self.media_worker.run)
+        self.media_worker.result.connect(self.on_media_info_updated)
+        self.media_worker.result.connect(self.media_thread.quit)
+
+    def start_media_worker(self):
+        if not self.media_thread.isRunning():
+            self.media_thread.start()
+
+    def on_media_info_updated(self, media_text):
+        self.topbar.update_media_info(media_text)
 
     def update_time_info(self):
-        """Atualiza data e hora"""
         try:
             current_time = self.system_info.get_time()
             current_date = self.system_info.get_date_short()
-            
+
             self.topbar.update_time(current_time)
             self.topbar.update_date(current_date)
         except Exception as e:
             print(f"Erro ao atualizar informações de tempo: {e}")
 
-    def update_system_info(self):
-        """Atualiza informações do sistema (CPU/RAM)"""
-        try:
-            ram_usage = self.system_info.get_ram_usage()
-            cpu_usage = self.system_info.get_cpu_usage()
-            
-            self.topbar.update_ram_usage(ram_usage)
-            self.topbar.update_cpu_usage(cpu_usage)
-        except Exception as e:
-            print(f"Erro ao atualizar informações do sistema: {e}")
-
-    def update_media_info(self):
-        """Atualiza informações de mídia"""
-        try:
-            media_info = self.media_detector.get_current_media()
-            
-            if media_info:
-                # Formatar o texto para exibição
-                media_text = self.media_detector.format_media_text(media_info, max_length=60)
-                self.topbar.update_media_info(media_text)
-            else:
-                # Limpar o display se não há mídia
-                self.topbar.update_media_info("")
-                
-        except Exception as e:
-            print(f"Erro ao detectar mídia: {e}")
-            self.topbar.update_media_info("")
+    def update_all(self):
+        self.update_time_info()
+        self.start_system_worker()
+        self.start_media_worker()
 
     def cleanup(self):
-        """Cleanup dos timers e recursos"""
         try:
             if hasattr(self, 'time_timer'):
                 self.time_timer.stop()
@@ -87,5 +85,11 @@ class MainController(QObject):
                 self.system_timer.stop()
             if hasattr(self, 'media_timer'):
                 self.media_timer.stop()
+            if self.system_thread.isRunning():
+                self.system_thread.quit()
+                self.system_thread.wait()
+            if self.media_thread.isRunning():
+                self.media_thread.quit()
+                self.media_thread.wait()
         except Exception as e:
             print(f"Erro durante cleanup: {e}")

@@ -46,7 +46,7 @@ class SystemInfo:
 
     @staticmethod
     def get_cpu_usage():
-        return psutil.cpu_percent(interval=0.05)
+        return psutil.cpu_percent(interval=0.5)
 
     @staticmethod
     def get_ram_info():
@@ -65,7 +65,7 @@ class SystemInfo:
         
         cpu_freq = psutil.cpu_freq()
         return {
-            'percentage': psutil.cpu_percent(interval=0.05),
+            'percentage': psutil.cpu_percent(interval=0.5),
             'cores': cls._cpu_count,
             'frequency': cpu_freq.current if cpu_freq else 0
         }
