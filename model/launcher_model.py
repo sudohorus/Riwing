@@ -9,6 +9,8 @@ import win32con
 import win32api
 from PIL import Image
 import tempfile
+import math
+import re
 
 class AppInfo:
     def __init__(self, name: str, path: str, icon_path: str = None):
@@ -413,18 +415,83 @@ class AppModel:
         ]
         
         return [WebInfo(name, url) for name, url in popular_sites]
-    
+
     def evaluate_math(self, expression: str) -> Optional[MathInfo]:
         try:
-            allowed_chars = set('0123456789+-*/.() ')
-            if not all(c in allowed_chars for c in expression):
+            expression = expression.strip()
+            allowed_functions = {
+                'sqrt', 'log', 'log10', 'log2', 'ln',
+                'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
+                'sinh', 'cosh', 'tanh',
+                'exp', 'pow', 'abs', 'ceil', 'floor', 'round',
+                'degrees', 'radians'
+            }
+            allowed_chars = set('0123456789+-*/.()^, ')
+            temp_expr = expression.lower()
+            for func in allowed_functions:
+                temp_expr = temp_expr.replace(func, '')
+            
+            if not all(c in allowed_chars for c in temp_expr):
                 return None
-                
-            result = eval(expression)
-            return MathInfo(expression, str(result))
+            
+            function_pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\('
+            functions_found = re.findall(function_pattern, expression.lower())
+            
+            for func in functions_found:
+                if func not in allowed_functions:
+                    return None
+            
+            safe_dict = {
+                "__builtins__": {},
+                "sqrt": math.sqrt,
+                "log": math.log,
+                "log10": math.log10,
+                "log2": math.log2,
+                "ln": math.log,  
+                "exp": math.exp,
+                "pow": math.pow,
+                "abs": abs,
+                "round": round,
+                "sin": math.sin,
+                "cos": math.cos,
+                "tan": math.tan,
+                "asin": math.asin,
+                "acos": math.acos,
+                "atan": math.atan,
+                "sinh": math.sinh,
+                "cosh": math.cosh,
+                "tanh": math.tanh,
+                "ceil": math.ceil,
+                "floor": math.floor,
+                "degrees": math.degrees,
+                "radians": math.radians,
+                "pi": math.pi,
+                "e": math.e,
+            }
+            
+            expression = expression.replace('^', '**')
+            
+            result = eval(expression, safe_dict, {})
+            
+            if isinstance(result, float):
+                if result.is_integer():
+                    result_str = str(int(result))
+                else:
+                    result_str = f"{result:.10g}"
+            else:
+                result_str = str(result)
+            
+            return MathInfo(expression, result_str)
+            
+        except ZeroDivisionError:
+            return None  
+        except ValueError:
+            return None  
+        except OverflowError:
+            return None  
         except:
             return None
-    
+        
     def cleanup(self):
         try:
             import shutil
