@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/sudohorus/Riwing)
  
-[📥 Download](#download) • [🚀 Recursos](#recursos)
+[📥 Download](https://github.com/sudohorus/Riwing/releases/latest) • [🚀 Recursos](#recursos)
 
 </div>
 
@@ -15,14 +15,6 @@
 ## 🌟 Sobre o Projeto
 
 **Riwing** é uma ferramenta poderosa de personalização e produtividade que transforma a experiência do seu desktop. Inicialmente focado no Windows, oferece uma interface elegante e funcional para organizar e otimizar seu ambiente de trabalho.
-
-## 📥 Download
-
-Baixe a versão mais recente do Riwing:
-
-**[📦 Download Riwing.exe](https://github.com/sudohorus/Riwing/releases/latest)**
-
----
 
 <div align="center">
   <strong>Feito por <a href="https://github.com/sudohorus">sudohorus</a></strong>
