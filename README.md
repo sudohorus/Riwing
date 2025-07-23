@@ -4,7 +4,7 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/sudohorus/Riwing)](https://github.com/sudohorus/Riwing/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/sudohorus/Riwing)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/sudohorus/Riwing)
  
 [📥 Download](https://github.com/sudohorus/Riwing/releases/latest) • [🚀 Recursos](#recursos)
 
