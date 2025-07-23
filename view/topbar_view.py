@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QFontMetrics
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont, QFontMetrics, QGuiApplication
 import platform
 
 class TopBar(QWidget):
@@ -18,10 +18,12 @@ class TopBar(QWidget):
         """
         
         self._color_cache = {} 
+        self._is_fullscreen_detected = False
         
         self.setup_window()
         self.setup_ui()
         self.reserve_screen_space()
+        self.setup_fullscreen_detection()
 
     def setup_window(self):
         flags = (Qt.WindowType.FramelessWindowHint |
@@ -34,7 +36,6 @@ class TopBar(QWidget):
         self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        from PyQt6.QtGui import QGuiApplication
         screen = QGuiApplication.primaryScreen().geometry()
         
         self.setFixedHeight(32)
@@ -42,12 +43,18 @@ class TopBar(QWidget):
         self.move(0, 0)
 
     def setup_ui(self):
-        self.setStyleSheet("""
+        self.background_widget = QWidget()
+        self.background_widget.setStyleSheet("""
             QWidget {
-                background-color: rgba(16, 16, 16, 245);
+                background-color: rgb(0, 0, 0);
                 border-bottom: 1px solid rgba(255, 255, 255, 50);
             }
         """)
+        
+        main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addWidget(self.background_widget)
 
         font = self._get_optimal_font()
         
@@ -74,33 +81,108 @@ class TopBar(QWidget):
             label.setStyleSheet(self._base_label_style)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        layout = QHBoxLayout()
-        layout.setContentsMargins(12, 0, 12, 0)
-        layout.setSpacing(8)
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(12, 0, 12, 0)
+        content_layout.setSpacing(8)
 
-        layout.addWidget(self.date_label)
-        layout.addWidget(self.time_label)
+        content_layout.addWidget(self.date_label)
+        content_layout.addWidget(self.time_label)
         
         separator_left = QLabel("|")
         separator_left.setFont(font)
         separator_left.setStyleSheet("color: rgba(255, 255, 255, 100); padding: 6px 4px;")
-        layout.addWidget(separator_left)
+        content_layout.addWidget(separator_left)
         
-        layout.addStretch()
+        content_layout.addStretch()
         
-        layout.addWidget(self.media_label)
+        content_layout.addWidget(self.media_label)
         
-        layout.addStretch()
+        content_layout.addStretch()
         
         separator_right = QLabel("|")
         separator_right.setFont(font)
         separator_right.setStyleSheet("color: rgba(255, 255, 255, 100); padding: 6px 4px;")
-        layout.addWidget(separator_right)
+        content_layout.addWidget(separator_right)
         
-        layout.addWidget(self.ram_label)
-        layout.addWidget(self.cpu_label)
+        content_layout.addWidget(self.ram_label)
+        content_layout.addWidget(self.cpu_label)
         
-        self.setLayout(layout)
+        self.background_widget.setLayout(content_layout)
+        self.setLayout(main_layout)
+
+    def setup_fullscreen_detection(self):
+        self.fullscreen_timer = QTimer()
+        self.fullscreen_timer.timeout.connect(self.check_fullscreen)
+        self.fullscreen_timer.start(500)  
+
+    def check_fullscreen(self):
+        try:
+            is_fullscreen = self._check_fullscreen_windows()
+            
+            if is_fullscreen != self._is_fullscreen_detected:
+                self._is_fullscreen_detected = is_fullscreen
+                if is_fullscreen:
+                    self.hide()
+                else:
+                    self.show()
+                    
+        except Exception as e:
+            print(f"Erro ao verificar tela cheia: {e}")
+
+    def _check_fullscreen_windows(self):
+        try:
+            import ctypes
+            from ctypes import wintypes
+        
+            hwnd = ctypes.windll.user32.GetForegroundWindow()
+            
+            if not hwnd or hwnd == int(self.winId()):
+                return False
+            
+            rect = wintypes.RECT()
+            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            
+            screen = QGuiApplication.primaryScreen().geometry()
+            screen_width = screen.width()  
+            screen_height = screen.height()
+            
+            window_width = rect.right - rect.left
+            window_height = rect.bottom - rect.top
+            
+            is_fullscreen = (
+                window_width >= screen_width - 5 and
+                window_height >= screen_height - 5 and
+                rect.left <= 5 and
+                rect.top <= 5
+            )
+            
+            if is_fullscreen:
+                class_name = ctypes.create_unicode_buffer(256)
+                ctypes.windll.user32.GetClassNameW(hwnd, class_name, 256)
+                
+                system_classes = [
+                    'Progman',      
+                    'WorkerW',      
+                    'Shell_TrayWnd', 
+                    'DV2ControlHost',
+                    'Windows.UI.Core.CoreWindow'  
+                ]
+                
+                if class_name.value in system_classes:
+                    return False
+                    
+                title_length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+                if title_length > 0:
+                    title_buffer = ctypes.create_unicode_buffer(title_length + 1)
+                    ctypes.windll.user32.GetWindowTextW(hwnd, title_buffer, title_length + 1)
+                
+                return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"Erro na detecção de tela cheia: {e}")
+            return False
 
     def _get_optimal_font(self):
         fonts_to_try = ["Consolas", "Monaco", "monospace"]

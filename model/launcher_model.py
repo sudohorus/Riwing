@@ -184,7 +184,6 @@ class AppModel:
                     if large:
                         icon_path = self._hicon_to_image(large[0], exe_path, f"extracticon_{icon_index}")
                         
-                        # Limpa recursos
                         for icon in large:
                             if icon: win32gui.DestroyIcon(icon)
                         if small:

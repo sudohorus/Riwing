@@ -119,9 +119,8 @@ class SearchController:
     def execute_command(self, command: str):
         try:
             subprocess.Popen(
-                f'cmd /c {command}',
-                shell=True,
-                creationflags=subprocess.CREATE_NEW_CONSOLE
+                f'start cmd /k "{command}"',
+                shell=True
             )
         except Exception as e:
             print(f"Erro ao executar comando {command}: {e}")
