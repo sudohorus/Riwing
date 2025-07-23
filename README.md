@@ -1,7 +1,5 @@
 <div align="center">
 
-# Riwing
-
 <img src="media/riwing-banner.png" alt="Riwing" width="400">
 
 [![GitHub stars](https://img.shields.io/github/stars/sudohorus/Riwing)](https://github.com/sudohorus/Riwing/stargazers)
