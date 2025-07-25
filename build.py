@@ -3,7 +3,7 @@ import subprocess
 
 exe_name = "Riwing"
 main_script = "main.py"
-icon_path = "icon.ico"
+icon_path = "media/icon.ico"
 hidden_imports = [
     "controller",
     "model",
@@ -21,6 +21,8 @@ cmd = [
     "--workpath=build",     
     f"--icon={icon_path}"
 ]
+
+cmd.append("--windowed")
 
 for module in hidden_imports:
     cmd.append(f"--hidden-import={module}")
