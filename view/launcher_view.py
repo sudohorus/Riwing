@@ -192,6 +192,13 @@ class LauncherView(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
         
+        self.drag_area = QWidget()
+        self.drag_area.setFixedHeight(20) 
+        self.drag_area.mousePressEvent = self.mousePressEvent
+        self.drag_area.mouseMoveEvent = self.mouseMoveEvent
+        self.drag_area.mouseReleaseEvent = self.mouseReleaseEvent
+        content_layout.addWidget(self.drag_area)
+        
         self.search_input = QLineEdit()
         self.update_placeholder()
         self.search_input.textChanged.connect(self.on_search_changed)
@@ -377,3 +384,17 @@ class LauncherView(QWidget):
     def closeEvent(self, event):
         event.ignore()
         self.hide_launcher()
+        
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_active = True
+            self._drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if getattr(self, "_drag_active", False) and event.buttons() == Qt.MouseButton.LeftButton:
+            self.move(event.globalPosition().toPoint() - self._drag_position)
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        self._drag_active = False
