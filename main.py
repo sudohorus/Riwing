@@ -40,7 +40,6 @@ class SystemTrayManager:
         
         self.setup_tray_menu()
         self.tray_icon.show()
-        
     
     def setup_tray_menu(self):
         menu = QMenu()
@@ -54,18 +53,23 @@ class SystemTrayManager:
         quit_action = QAction("Sair", menu)
         quit_action.triggered.connect(self.main_app.quit_application)
         menu.addAction(quit_action)
+        
         self.tray_icon.setContextMenu(menu)
         self.tray_icon.setToolTip("Riwing")
-    
+        
+        print("Menu do system tray criado com 2 opções")
     
     def show_about(self):
+        print("Função 'Sobre' chamada!")
         
         msg = QMessageBox()
         msg.setWindowTitle("Sobre Riwing")
         msg.setText("Riwing v0.1\nAplicativo para personalização do Windows.\n© 2025 sudohorus")
         msg.setIcon(QMessageBox.Icon.Information)
+        
         if not self.tray_icon.icon().isNull():
             msg.setIconPixmap(self.tray_icon.icon().pixmap(64, 64))
+        
         msg.exec()
 
 class RiwingLauncher(QObject):
@@ -119,6 +123,7 @@ class App:
         self.quit_application()
         
     def quit_application(self):
+        print("Saindo da aplicação...")
         self.cleanup()
         self.app.quit()
         sys.exit(0)
@@ -146,7 +151,7 @@ class App:
             if self.tray_manager.tray_icon.supportsMessages():
                 self.tray_manager.tray_icon.showMessage(
                     "Riwing",
-                    "Aplicativo iniciado com sucesso - Executando em segundo plano",
+                    "Aplicativo iniciado com sucesso - Clique direito no ícone para opções",
                     QSystemTrayIcon.MessageIcon.Information,
                     3000
                 )

@@ -4,9 +4,10 @@ import subprocess
 exe_name = "Riwing"
 main_script = "main.py"
 icon_path = "media/icon.ico"
+
 hidden_imports = [
     "controller",
-    "model",
+    "model", 
     "view",
     "worker",
     "apps"
@@ -17,17 +18,22 @@ cmd = [
     "--noconfirm",
     "--onefile",
     f"--name={exe_name}",
-    "--distpath=dist",   
-    "--workpath=build",     
-    f"--icon={icon_path}"
+    "--distpath=dist",  
+    "--workpath=build",    
+    f"--icon={icon_path}",
+    "--windowed"
 ]
 
-cmd.append("--windowed")
+cmd.append(f"--add-data={icon_path};.")
+cmd.append(f"--add-data=media;media")  
 
 for module in hidden_imports:
     cmd.append(f"--hidden-import={module}")
 
 cmd.append(main_script)
+
+print("Construindo executável...")
+print(f"Comando: {' '.join(cmd)}")
 
 subprocess.run(cmd)
 
