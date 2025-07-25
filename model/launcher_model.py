@@ -103,11 +103,12 @@ class AppModel:
         
         self.load_start_menu_apps()
         
-        seen_names = set()
+        seen_paths = set()
         unique_apps = []
         for app in self.apps_cache:
-            if app.name.lower() not in seen_names:
-                seen_names.add(app.name.lower())
+            real_path = os.path.realpath(app.path).lower()
+            if real_path not in seen_paths and os.path.exists(app.path):
+                seen_paths.add(real_path)
                 unique_apps.append(app)
         
         self.apps_cache = sorted(unique_apps, key=lambda x: x.name.lower())

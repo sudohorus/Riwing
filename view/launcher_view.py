@@ -1,12 +1,13 @@
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QListWidget, QListWidgetItem, QLabel,
-                             QGraphicsDropShadowEffect)
+                             QGraphicsDropShadowEffect, QMenu)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QIcon, QPixmap, QColor
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut, QIcon, QPixmap, QColor, QAction
 from typing import List, Union
 from model.launcher_model import AppInfo, FileInfo, WebInfo, CommandInfo, MathInfo
 import os
 import platform
+import subprocess
 import sys
 
 class OverlayWindow(QWidget):
@@ -68,6 +69,44 @@ class CustomListWidget(QListWidget):
             return f"{size_bytes / (1024 * 1024):.1f} MB"
         else:
             return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
+        
+    def contextMenuEvent(self, event):
+        item = self.itemAt(event.pos())
+        if not item:
+            return
+
+        item_data = item.data(Qt.ItemDataRole.UserRole)
+        if isinstance(item_data, (AppInfo, FileInfo)):
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: rgba(40, 40, 40, 240);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 40);
+                    padding: 4px;
+                    border-radius: 6px;
+                }
+                QMenu::item {
+                    padding: 6px 12px;
+                    background-color: transparent;
+                }
+                QMenu::item:selected {
+                    background-color: rgba(70, 130, 255, 90);
+                }
+            """)
+            
+            
+            open_folder_action = QAction("Abrir local do arquivo", self)
+            
+            def open_folder():
+                path = item_data.path
+                if os.path.exists(path):
+                    folder = os.path.dirname(path)
+                    subprocess.Popen(f'explorer /select,"{path}"')
+            
+            open_folder_action.triggered.connect(open_folder)
+            menu.addAction(open_folder_action)
+            menu.exec(event.globalPos())
 
 class LauncherView(QWidget):
     item_executed = pyqtSignal(object)
